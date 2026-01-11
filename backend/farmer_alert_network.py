@@ -2,6 +2,9 @@
 Farmer Alert Network Module
 GNN-based similarity network for disease/pest alert propagation
 
+Author: Rajat Pundir (@Rajatpundir7)
+Role: Full Stack Developer & Database Architect
+
 Each farmer is a node with features:
 - Location (lat, lon)
 - Soil type/pH

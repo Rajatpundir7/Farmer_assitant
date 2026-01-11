@@ -1,6 +1,10 @@
 """
 Alert Service Module
 Manages farmer alerts, notifications, and location storage
+
+Author: Rajat Pundir (@Rajatpundir7)
+Role: Full Stack Developer & Database Architect
+Features: Weather Alerts, Disease Outbreak Notifications, Government Schemes
 """
 import os
 import json
