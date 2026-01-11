@@ -1,3 +1,9 @@
+"""
+Pest Detection Engine - YOLO-based Pest & Disease Detection
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Pest Detection & Crop Recommender Models
+"""
+
 import os
 import logging
 import shutil

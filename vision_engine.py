@@ -1,3 +1,17 @@
+"""
+Vision Engine - Crop Disease Detection using ONNX & YOLO Models
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Computer Vision & Disease Detection Models
+
+Supported Models:
+- corn_mobile_v2.onnx: Corn diseases (Blight, Rust)
+- cotton_disease_v2.onnx: Cotton diseases (Bacterial Blight, Curl Virus)
+- rice_mobile_v2.onnx: Rice diseases (Blast, Tungro)
+- wheat_mobile_v2.onnx: Wheat diseases (Rust)
+- sugarcane_mobile_v2.onnx: Sugarcane detection
+- plant_doctor.pt: General YOLOv8 model for leaf scanning
+"""
+
 import os
 import numpy as np
 import onnxruntime as ort

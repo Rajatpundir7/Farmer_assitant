@@ -2,6 +2,9 @@
 Voice Assistant Service
 Integrates Whisper (STT) + Gemini (AI) + XTTS (TTS)
 Complete voice-to-voice agriculture assistant
+
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Voice Assistant & Gemini API Integration
 """
 
 import os
