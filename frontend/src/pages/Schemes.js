@@ -1,3 +1,10 @@
+/**
+ * Government Schemes Page - PM-KISAN, PMFBY, Subsidies
+ * 
+ * @author Rajat Pundir (@Rajatpundir7)
+ * @role Full Stack Developer - Government Schemes Integration
+ */
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

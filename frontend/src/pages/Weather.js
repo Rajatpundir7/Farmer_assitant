@@ -1,3 +1,10 @@
+/**
+ * Weather Page - Real-time weather data and farming alerts
+ * 
+ * @author Rajat Pundir (@Rajatpundir7)
+ * @role Full Stack Developer - Weather Alerts & OpenWeatherMap Integration
+ */
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
