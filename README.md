@@ -6,6 +6,21 @@ Team Name: Kedari
 Event: Hack The Winter.
 University: Graphic Era Hill University, Dehradun
 
+---
+
+## 👥 Team Members & Contributions
+
+| Team Member | Role | Key Contributions |
+|-------------|------|-------------------|
+| **Rajat Pundir** [@Rajatpundir7](https://github.com/Rajatpundir7) | Full Stack Developer & DB Architect | GNN Alert System, Weather Alerts, Database Schema, n8n Automation, WhatsApp Integration (50%) |
+| **Saurav Beri** [@sauravberi16](https://github.com/sauravberi16) | Backend Developer | FastAPI Backend, Fertilizer Calculator, Pesticide Calculator, Translation Service |
+| **Ankit Negi** [@anku251](https://github.com/anku251) | AI/ML Engineer | Pest Detection Models, Crop Recommender, Voice Assistant, TTS, Gemini Integration |
+| **Devesh Singh** [@singhdevesh9net](https://github.com/singhdevesh9net) | Full Stack Developer | Ganga River Flood Alert System, Real-time Monitoring Dashboard |
+
+📄 **[Detailed Team Contributions →](docs/TEAM_CONTRIBUTIONS.md)**
+
+---
+
 (Kisan.JI) is an AI-powered, mobile-first "village nervous system" designed to empower smallholder farmers. Addressing the critical issues of crop loss and market exploitation, our solution acts as a bridge between advanced agricultural science and the rural farmer.Current Status: This is a fully functional prototype featuring a Python backend, HTML/CSS/JS frontend, and optimized ONNX-based deep learning models for fast, lightweight inference.
 
   
@@ -77,17 +92,97 @@ Beyond detection, the app serves as an educational library. We have categorized 
 
 
 ## Planned Improvements (Round 2)
-### 1. Ganga Alerts (Flood & Water Safety)
+### 1. Ganga Alerts (Flood & Water Safety) - *By Devesh Singh*
 •	Objective: To directly address climate uncertainty.
-•	Plan: Integration of real-time river level monitoring for farmers in the Ganges basin to provide early evacuation warnings.
+•	Status: ✅ **Implemented** - Real-time flood monitoring for 8 cities along Ganga River
+•	Features: Traffic light indicators, population impact data, region filtering
+📄 **[Flood Alert Documentation →](docs/FLOOD_ALERT_SYSTEM.md)**
 
- #### 2. Autonomous WhatsApp Agent (Business API)
+#### 2. Autonomous WhatsApp Agent (Business API) - *By Rajat Pundir*
 •	Objective: To remove the barrier of app installation.
-•	Plan: Porting the vision_engine and chatbot.py to a WhatsApp number. Farmers will send a photo to a contact, and our server will reply with the diagnosis and audio advice.
+•	Status: 🔄 **50% Complete** - n8n workflows + WhatsApp webhook integration
+•	Completed: Text queries, voice messages, webhook setup
+•	In Progress: Image-based disease detection via WhatsApp
+📄 **[n8n & WhatsApp Documentation →](docs/N8N_WHATSAPP_AUTOMATION.md)**
 
- ### 3. Blockchain Supply Chain
+### 3. Blockchain Supply Chain
 •	Objective: To validate the "Company Buyer Listing" feature.
 •	Plan: A transparent ledger to record transactions between farmers and corporate buyers, ensuring fair payments and traceability.
+
+---
+
+## 👨‍💻 Individual Contributions Detail
+
+<details>
+<summary><b>🔵 Rajat Pundir - Full Stack Developer & Database Architect</b></summary>
+
+### Core Features Developed:
+- **GNN-Based Network Alert System**: Graph Neural Network for farmer alert propagation
+- **Weather Alerts Module**: Real-time frost, rain, extreme weather warnings
+- **Disease Outbreak Notifications**: Community-wide disease alerts with image detection
+- **Government Schemes Integration**: PM-KISAN, PMFBY, State Subsidies
+- **n8n Workflow Automation**: Automated disease detection, weather, market workflows
+- **WhatsApp Business API**: Text/voice query handling (50% complete)
+
+### Database Schema (11 Tables):
+| Table | Purpose |
+|-------|---------|
+| users | Farmer profiles & preferences |
+| farmer_profile | Land, soil, irrigation details |
+| disease_results | AI detection results |
+| market_prices | Real-time mandi rates |
+| schemes | Government programs |
+| weather_data | Location forecasts |
+
+### Files:
+`farmer_alert_network.py` • `alert_service.py` • `AgriGraph_Optimizer/`
+</details>
+
+<details>
+<summary><b>🟢 Saurav Beri - Backend Developer</b></summary>
+
+### Core Features Developed:
+- **Backend Architecture**: FastAPI & Flask server setup
+- **Fertilizer Calculator**: NPK-based recommendations for 100+ crops
+- **Pesticide Calculator**: Safe dosage calculations for 99 pesticides
+- **Translation Service**: Multilingual support with deep-translator
+- **API Design**: Request-response flow, validation, modular organization
+
+### Files:
+`advanced_fertilizer_calculator.py` • `pesticide_calculator.py` • `backend.py` • `server.py` • `translation_service.py`
+</details>
+
+<details>
+<summary><b>🟡 Ankit Negi - AI/ML Engineer</b></summary>
+
+### Core Features Developed:
+- **Pest Detection Models**: Crop-specific disease detection
+  - `corn_mobile_v2.onnx` - Corn Blight, Rust
+  - `cotton_disease_v2.onnx` - Cotton Bacterial Blight
+  - `rice_mobile_v2.onnx` - Rice Blast, Tungro
+  - `wheat_mobile_v2.onnx` - Wheat Rust
+  - `plant_doctor.pt` - YOLOv8 leaf scanning
+- **Crop Recommender**: ML model (N, P, K, pH analysis)
+- **Voice Assistant**: Gemini API integration
+- **TTS & STT**: XTTS voice synthesis, Whisper recognition
+
+### Files:
+`pest_detection.py` • `vision_engine.py` • `crop_engine.py` • `voice_assistant.py` • `agri_brain.py` • `universal_tts.py` • `voice_processor.py`
+</details>
+
+<details>
+<summary><b>🔴 Devesh Singh - Full Stack Developer</b></summary>
+
+### Core Feature: Ganga River Flood Alert System
+- **Live Monitoring**: 8 cities (Varanasi, Patna, Haridwar, Prayagraj, Kanpur, Farakka, Rishikesh, Kolkata)
+- **Visual Indicators**: 🔴 Danger | 🟠 Warning | 🟢 Safe
+- **Features**: Region filtering, population impact, rainfall data
+- **Tech Stack**: Django backend, Vanilla JavaScript frontend
+
+📄 **[Documentation →](docs/FLOOD_ALERT_SYSTEM.md)**
+</details>
+
+---
 
 
 

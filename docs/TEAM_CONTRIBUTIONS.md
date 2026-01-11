@@ -12,12 +12,15 @@
 - **Government Schemes Integration**: PM-KISAN, PMFBY Crop Insurance, State-Wise Subsidies
 - **Disease Image Gallery Feature**: Interactive crop disease identification tool
 - **Database Schema Design**: Designed scalable MongoDB schema with 11 interconnected tables
+- **n8n Workflow Automation**: Automated disease detection, weather alerts, and market price workflows
+- **WhatsApp Business API Integration (50% Complete)**: Text queries, voice messages, webhook setup
 
 **Files Contributed:**
 - `backend/farmer_alert_network.py`
 - `backend/alert_service.py`
 - `backend/crop_database.json`
-- `frontend/src/components/DiseaseGallery/`
+- `AgriGraph_Optimizer/main.py`
+- `docs/N8N_WHATSAPP_AUTOMATION.md`
 - Database schema design
 
 ---
