@@ -1,6 +1,9 @@
 """
 Voice Processor - Whisper-based Speech Recognition
 Supports multilingual transcription with automatic language detection
+
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Speech Recognition & Whisper Integration
 """
 
 import whisper

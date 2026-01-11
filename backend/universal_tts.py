@@ -1,6 +1,9 @@
 """
 Universal TTS - Text-to-Speech with Voice Cloning
 Uses XTTS v2 for multilingual speech synthesis
+
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Voice Synthesis & TTS Integration
 """
 
 import torch

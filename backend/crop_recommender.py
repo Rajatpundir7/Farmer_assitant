@@ -1,6 +1,9 @@
 """
 Crop Recommendation Engine
 Uses trained ML model with live weather data for crop recommendations
+
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Crop Recommendation System & Weather API Integration
 """
 import os
 import sys
