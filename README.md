@@ -2,6 +2,8 @@
 
 ### Explainatory video link---->  https://youtu.be/ETIP463LaVk?si=M5DlUlwCZ6KcZCZz
 
+### 📊 Database Schema Design---->  [View Database Schema](https://drive.google.com/file/d/1XOMa5s7_Mx0_X0nSupDs70ZFKi4kaB4u/view?usp=sharing)
+
 Team Name: Kedari
 Event: Hack The Winter.
 University: Graphic Era Hill University, Dehradun
@@ -10,14 +12,17 @@ University: Graphic Era Hill University, Dehradun
 
 ## 👥 Team Members & Contributions
 
-| Team Member | Role | Key Contributions |
-|-------------|------|-------------------|
-| **Rajat Pundir** [@Rajatpundir7](https://github.com/Rajatpundir7) | Full Stack Developer & DB Architect | GNN Alert System, Weather Alerts, Database Schema, n8n Automation, WhatsApp Integration (50%) |
-| **Saurav Beri** [@sauravberi16](https://github.com/sauravberi16) | Backend Developer | FastAPI Backend, Fertilizer Calculator, Pesticide Calculator, Translation Service |
-| **Ankit Negi** [@anku251](https://github.com/anku251) | AI/ML Engineer | Pest Detection Models, Crop Recommender, Voice Assistant, TTS, Gemini Integration |
-| **Devesh Singh** [@singhdevesh9net](https://github.com/singhdevesh9net) | Full Stack Developer | Ganga River Flood Alert System, Real-time Monitoring Dashboard |
+| Team Member | Role | Key Contributions | Individual Repo |
+|-------------|------|-------------------|-----------------|
+| **Rajat Pundir** [@Rajatpundir7](https://github.com/Rajatpundir7) | Full Stack Developer & DB Architect | GNN Alert System, Weather Alerts, Database Schema, n8n Automation, WhatsApp Integration (50%) | [🔗 kisanji](https://github.com/Rajatpundir7/kisanji) |
+| **Saurav Beri** [@rydhmm](https://github.com/rydhmm) | Backend Developer | FastAPI Backend, Fertilizer Calculator, Pesticide Calculator, Translation Service | [🔗 kisanji-project](https://github.com/rydhmm/kisanji-project) |
+| **Ankit Negi** [@anku251](https://github.com/anku251) | AI/ML Engineer | Pest Detection Models, Crop Recommender, Voice Assistant, TTS, Gemini Integration | [🔗 kisan_jii](https://github.com/anku251/kisan_jii) |
+| **Devesh Singh** [@Devesh-Singh-Gouni](https://github.com/Devesh-Singh-Gouni) | Full Stack Developer | Ganga River Flood Alert System, Real-time Monitoring Dashboard | [🔗 Pridict-River-Disaster](https://github.com/Devesh-Singh-Gouni/Pridict-River-Disaster--ganga-river-) |
 
-📄 **[Detailed Team Contributions →](docs/TEAM_CONTRIBUTIONS.md)**
+### 📚 Documentation
+- 📄 **[Team Contributions](docs/TEAM_CONTRIBUTIONS.md)** - Detailed breakdown of each member's work
+- 📄 **[Flood Alert System](docs/FLOOD_ALERT_SYSTEM.md)** - Ganga River monitoring documentation
+- 📄 **[n8n & WhatsApp Automation](docs/N8N_WHATSAPP_AUTOMATION.md)** - Workflow automation & WhatsApp integration
 
 ---
 
