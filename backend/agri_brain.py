@@ -1,6 +1,9 @@
 """
 Kisan.JI AI Brain - Powered by Google Gemini
 Agriculture Expert Consultant with multilingual support
+
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Gemini API Integration & Natural Language Processing
 """
 
 import google.generativeai as genai

@@ -1,3 +1,11 @@
+"""
+Crop Recommender Engine - ML-based Crop Prediction
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Crop Recommendation System
+
+Analyzes soil (N, P, K, pH) and environmental conditions to suggest optimal crops.
+"""
+
 import os
 import joblib
 import numpy as np
