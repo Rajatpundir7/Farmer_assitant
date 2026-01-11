@@ -1,4 +1,10 @@
 # backend.py
+"""
+Backend API Server - Flask Application
+Author: Saurav Beri (@sauravberi16)
+Role: Backend Developer - API Development & Request Handling
+"""
+
 from flask import Flask, request, jsonify
 from advanced_fertilizer_calculator import AdvancedFertilizerCalculator
 import json

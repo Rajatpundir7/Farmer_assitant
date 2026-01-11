@@ -1,3 +1,9 @@
+"""
+KisanJi FastAPI Server - Main Application Entry Point
+Authors: Saurav Beri (@sauravberi16), Rajat Pundir (@Rajatpundir7)
+Roles: Backend API Development, Database Integration, Feature Routing
+"""
+
 from fastapi import FastAPI, APIRouter, HTTPException, Query, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
