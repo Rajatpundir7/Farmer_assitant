@@ -1,3 +1,10 @@
+/**
+ * Calculators Page - Fertilizer & Pesticide Calculators
+ * 
+ * @author Saurav Beri (@sauravberi16)
+ * @role Backend Developer - Calculator Logic & UI Integration
+ */
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
