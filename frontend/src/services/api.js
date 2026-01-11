@@ -1,4 +1,10 @@
-// API Service for connecting frontend to backend
+/**
+ * API Service for connecting frontend to backend
+ * 
+ * @author Saurav Beri (@sauravberi16)
+ * @role Backend Developer - API Integration & Request Handling
+ */
+
 const API_BASE_URL = process.env.REACT_APP_API_URL || 
   (window.location.hostname === 'localhost' 
     ? 'http://localhost:8000/api' 
