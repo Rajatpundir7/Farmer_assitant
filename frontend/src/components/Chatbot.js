@@ -1,3 +1,10 @@
+/**
+ * Chatbot Component - Gemini AI Powered Agricultural Assistant
+ * 
+ * @author Ankit Negi (@anku251)
+ * @role AI/ML Engineer - Chatbot UI & Gemini Integration
+ */
+
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
