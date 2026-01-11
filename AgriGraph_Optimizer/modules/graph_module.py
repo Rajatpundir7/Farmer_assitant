@@ -1,6 +1,9 @@
 """
 Graph Intelligence Module
 Farmer Network Graph Intelligence using GAT (Graph Attention Networks)
+
+Author: Rajat Pundir (@Rajatpundir7)
+Role: Full Stack Developer & Database Architect - GNN Alert Propagation
 """
 import os
 import torch

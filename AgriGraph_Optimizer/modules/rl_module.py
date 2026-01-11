@@ -1,6 +1,9 @@
 """
 RL Module
 Proximal Policy Optimization (PPO) for Optimal Pesticide & Fertilizer Dosage
+
+Author: Rajat Pundir (@Rajatpundir7)
+Role: Full Stack Developer - Reinforcement Learning for Agriculture Optimization
 """
 import torch
 import torch.nn as nn
