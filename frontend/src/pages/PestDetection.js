@@ -1,3 +1,10 @@
+/**
+ * Pest Detection Page - AI-powered crop disease identification
+ * 
+ * @author Ankit Negi (@anku251)
+ * @role AI/ML Engineer - Disease Detection UI & Model Integration
+ */
+
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
