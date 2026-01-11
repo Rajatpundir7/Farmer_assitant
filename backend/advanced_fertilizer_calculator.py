@@ -3,6 +3,9 @@
 Advanced Fertilizer Calculator - With Complete Nutrient Analysis
 Supports: N, P, K, Ca, Mg, S, Fe, Mn, Zn
 Includes 100+ Indian crops
+
+Author: Saurav Beri (@sauravberi16)
+Role: Backend Developer - API & Calculator Logic
 """
 
 import json

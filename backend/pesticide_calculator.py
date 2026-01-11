@@ -2,6 +2,9 @@
 """
 Pesticide Calculator - Spray Dosage Calculator
 Supports 99 pesticides (Insecticides, Fungicides, Herbicides, Acaricides)
+
+Author: Saurav Beri (@sauravberi16)
+Role: Backend Developer - API & Calculator Logic
 """
 
 import json
