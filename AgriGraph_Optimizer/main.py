@@ -1,6 +1,9 @@
 """
 AgriGraph Optimizer - Main Integration Script
 Integrates Graph Intelligence, GANs, and RL for agricultural optimization
+
+Author: Rajat Pundir (@Rajatpundir7)
+Role: Full Stack Developer & Database Architect - GNN Alert System
 """
 import os
 import torch
