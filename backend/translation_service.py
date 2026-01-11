@@ -1,6 +1,9 @@
 """
 Translation Service using deep-translator
 Provides multi-language support for the application
+
+Author: Saurav Beri (@sauravberi16)
+Role: Backend Developer - Multilingual Translation APIs
 """
 import logging
 from typing import Dict, Optional, List
