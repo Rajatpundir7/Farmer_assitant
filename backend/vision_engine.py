@@ -1,6 +1,9 @@
 """
 Vision Engine for Crop Disease Detection
 Supports multiple ONNX models for crop-specific disease detection
+
+Author: Ankit Negi (@anku251)
+Role: AI/ML Engineer - Computer Vision & ONNX Model Integration
 """
 import os
 import sys
