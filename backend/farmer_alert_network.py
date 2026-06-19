@@ -17,28 +17,34 @@ the system proactively alerts similar farmers before the issue spreads.
 """
 import os
 import sys
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime, timedelta
 from pathlib import Path
 
-# Add parent directory for imports
-ROOT_DIR = Path(__file__).parent
-sys.path.insert(0, str(ROOT_DIR.parent / "AgriGraph_Optimizer"))
+# Optional torch - gracefully skip if not installed (Railway/cloud deploy)
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    logging.warning("torch not installed — GNN features disabled, using similarity fallback")
 
 try:
     from torch_geometric.data import Data
     from torch_geometric.nn import GATConv, SAGEConv
-    from sklearn.neighbors import NearestNeighbors
-    from sklearn.preprocessing import StandardScaler
     TORCH_GEOMETRIC_AVAILABLE = True
 except ImportError:
     TORCH_GEOMETRIC_AVAILABLE = False
-    logging.warning("torch_geometric not installed. Using fallback similarity methods.")
+
+try:
+    from sklearn.neighbors import NearestNeighbors
+    from sklearn.preprocessing import StandardScaler
+except ImportError:
+    pass
 
 logger = logging.getLogger(__name__)
 
@@ -47,48 +53,26 @@ logger = logging.getLogger(__name__)
 # FARMER GRAPH NEURAL NETWORK
 # =====================================
 
-class FarmerSimilarityGNN(nn.Module):
-    """
-    Graph Attention Network for farmer similarity and alert propagation
-    
-    Architecture:
-    - Input: Farmer features (location, soil, crop, etc.)
-    - GAT layers: Learn attention weights between similar farmers
-    - Output: Risk embeddings for alert propagation
-    """
-    def __init__(self, in_channels: int = 8, hidden_channels: int = 32, 
-                 out_channels: int = 16, heads: int = 4):
-        super(FarmerSimilarityGNN, self).__init__()
-        
-        if not TORCH_GEOMETRIC_AVAILABLE:
-            # Fallback to simple MLP if torch_geometric not available
-            self.fallback = True
-            self.mlp = nn.Sequential(
-                nn.Linear(in_channels, hidden_channels),
-                nn.ReLU(),
-                nn.Linear(hidden_channels, out_channels)
-            )
-        else:
-            self.fallback = False
-            self.conv1 = GATConv(in_channels, hidden_channels, heads=heads, dropout=0.3)
-            self.conv2 = GATConv(hidden_channels * heads, out_channels, heads=1, concat=False, dropout=0.3)
-        
-        self.risk_classifier = nn.Sequential(
-            nn.Linear(out_channels, 8),
-            nn.ReLU(),
-            nn.Linear(8, 1),
-            nn.Sigmoid()  # Risk score 0-1
-        )
-    
-    def forward(self, x, edge_index=None):
-        if self.fallback or edge_index is None:
-            embeddings = self.mlp(x)
-        else:
-            embeddings = F.elu(self.conv1(x, edge_index))
-            embeddings = F.elu(self.conv2(embeddings, edge_index))
-        
-        risk_scores = self.risk_classifier(embeddings)
-        return embeddings, risk_scores
+if TORCH_AVAILABLE:
+    class FarmerSimilarityGNN(nn.Module):
+        def __init__(self, in_channels=8, hidden_channels=32, out_channels=16, heads=4):
+            super().__init__()
+            self.fallback = not TORCH_GEOMETRIC_AVAILABLE
+            if self.fallback:
+                self.mlp = nn.Sequential(nn.Linear(in_channels, hidden_channels), nn.ReLU(), nn.Linear(hidden_channels, out_channels))
+            else:
+                self.conv1 = GATConv(in_channels, hidden_channels, heads=heads, dropout=0.3)
+                self.conv2 = GATConv(hidden_channels * heads, out_channels, heads=1, concat=False, dropout=0.3)
+            self.risk_classifier = nn.Sequential(nn.Linear(out_channels, 8), nn.ReLU(), nn.Linear(8, 1), nn.Sigmoid())
+        def forward(self, x, edge_index=None):
+            import torch.nn.functional as F
+            embeddings = self.mlp(x) if (self.fallback or edge_index is None) else F.elu(self.conv2(F.elu(self.conv1(x, edge_index)), edge_index))
+            return embeddings, self.risk_classifier(embeddings)
+else:
+    class FarmerSimilarityGNN:
+        def __init__(self, **kwargs): pass
+        def eval(self): return self
+        def __call__(self, x, edge_index=None): return x, x
 
 
 # =====================================
@@ -191,28 +175,24 @@ class FarmerAlertNetwork:
     """
     
     def __init__(self, device: str = 'cpu'):
-        self.device = torch.device(device)
+        self.device = device
         self.farmers: Dict[str, FarmerNode] = {}
         self.alerts_queue: List[Dict] = []
-        self.model: Optional[FarmerSimilarityGNN] = None
-        self.scaler = StandardScaler()
+        self.model = None
         self.similarity_threshold = 0.7
-        self.distance_km_threshold = 50  # Alert farmers within 50km
-        
-        # Initialize model
+        self.distance_km_threshold = 50
         self._initialize_model()
-        
         logger.info("✅ FarmerAlertNetwork initialized")
     
     def _initialize_model(self):
-        """Initialize the GNN model"""
-        self.model = FarmerSimilarityGNN(
-            in_channels=8,
-            hidden_channels=32,
-            out_channels=16,
-            heads=4
-        ).to(self.device)
-        self.model.eval()
+        try:
+            self.model = FarmerSimilarityGNN(in_channels=8, hidden_channels=32, out_channels=16, heads=4)
+            if TORCH_AVAILABLE:
+                self.model = self.model.to(torch.device(self.device))
+            self.model.eval()
+        except Exception as e:
+            logger.warning(f"Model init skipped: {e}")
+            self.model = None
     
     def register_farmer(self, farmer_data: Dict) -> FarmerNode:
         """Register a new farmer in the network"""
@@ -554,126 +534,57 @@ class FarmerAlertNetwork:
             "distance_km_threshold": self.distance_km_threshold
         }
     
-    def build_graph_embeddings(self) -> Optional[torch.Tensor]:
-        """
-        Build graph and generate farmer embeddings using GNN
-        
-        Returns:
-            Tensor of farmer embeddings
-        """
-        if len(self.farmers) < 2:
+    def build_graph_embeddings(self):
+        if not TORCH_AVAILABLE or len(self.farmers) < 2:
             return None
-        
-        # Get feature vectors for all farmers
-        farmer_ids = list(self.farmers.keys())
-        features = np.array([
-            self.farmers[fid].to_feature_vector() 
-            for fid in farmer_ids
-        ])
-        
-        # Build adjacency based on similarity
-        edges = []
-        for i, fid1 in enumerate(farmer_ids):
-            for j, fid2 in enumerate(farmer_ids):
-                if i >= j:
-                    continue
-                similarity = self._calculate_similarity(
-                    self.farmers[fid1], 
-                    self.farmers[fid2]
-                )
-                if similarity >= 0.4:
-                    edges.append((i, j))
-                    edges.append((j, i))
-        
-        # Convert to tensors
-        x = torch.tensor(features, dtype=torch.float32).to(self.device)
-        
-        if edges:
-            edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous().to(self.device)
-        else:
-            edge_index = None
-        
-        # Get embeddings from model
-        with torch.no_grad():
-            embeddings, risk_scores = self.model(x, edge_index)
-        
-        return embeddings
+        try:
+            farmer_ids = list(self.farmers.keys())
+            features = np.array([self.farmers[fid].to_feature_vector() for fid in farmer_ids])
+            x = torch.tensor(features, dtype=torch.float32)
+            edges = [(i,j) for i,fi in enumerate(farmer_ids) for j,fj in enumerate(farmer_ids)
+                     if i < j and self._calculate_similarity(self.farmers[fi], self.farmers[fj]) >= 0.4]
+            edge_index = torch.tensor(edges + [(j,i) for i,j in edges], dtype=torch.long).t().contiguous() if edges else None
+            with torch.no_grad():
+                embeddings, _ = self.model(x, edge_index)
+            return embeddings
+        except Exception as e:
+            logger.warning(f"Graph embeddings failed: {e}")
+            return None
 
 
 # =====================================
 # REINFORCEMENT LEARNING FOR ALERT OPTIMIZATION
 # =====================================
 
-class AlertPriorityRL:
-    """
-    RL agent for optimizing alert priority and timing
-    
-    State: (farmer_similarity, distance, severity, time_since_report, weather_risk)
-    Action: (priority_adjustment, send_now/delay)
-    Reward: Based on farmer response and disease prevention success
-    """
-    
-    def __init__(self, state_dim: int = 5, action_dim: int = 2, device: str = 'cpu'):
-        self.device = torch.device(device)
-        self.state_dim = state_dim
-        self.action_dim = action_dim
-        
-        # Simple policy network
-        self.policy = nn.Sequential(
-            nn.Linear(state_dim, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, action_dim),
-            nn.Softmax(dim=-1)
-        ).to(self.device)
-        
-        self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=0.001)
-        self.memory = []
-    
-    def get_priority_action(self, state: np.ndarray) -> Tuple[int, float]:
-        """Get alert priority action"""
-        state_tensor = torch.tensor(state, dtype=torch.float32).to(self.device)
-        
-        with torch.no_grad():
-            action_probs = self.policy(state_tensor)
-        
-        action = torch.multinomial(action_probs, 1).item()
-        confidence = action_probs[action].item()
-        
-        return action, confidence
-    
-    def optimize_alert(self, alert: Dict, weather_risk: float = 0.5) -> Dict:
-        """
-        Optimize alert priority using RL
-        
-        Args:
-            alert: Alert dictionary
-            weather_risk: Current weather risk factor
-            
-        Returns:
-            Optimized alert
-        """
-        state = np.array([
-            alert.get("similarity_score", 0.5),
-            alert.get("distance_km", 25) / 50.0,
-            alert.get("severity", 0.5),
-            0.0,  # Time since report (0 = just now)
-            weather_risk
-        ], dtype=np.float32)
-        
-        action, confidence = self.get_priority_action(state)
-        
-        # Adjust priority based on action
-        if action == 0:  # Increase priority
-            alert["priority"] = max(1, alert.get("priority", 2) - 1)
-            alert["rl_recommendation"] = "URGENT - Send immediately"
-        else:  # Keep or decrease
-            alert["rl_recommendation"] = "Standard priority"
-        
-        alert["rl_confidence"] = round(confidence, 3)
-        
-        return alert
+if TORCH_AVAILABLE:
+    class AlertPriorityRL:
+        def __init__(self, state_dim=5, action_dim=2, device='cpu'):
+            self.device = torch.device(device)
+            self.policy = nn.Sequential(
+                nn.Linear(state_dim, 64), nn.ReLU(),
+                nn.Linear(64, 32), nn.ReLU(),
+                nn.Linear(32, action_dim), nn.Softmax(dim=-1)
+            ).to(self.device)
+            self.optimizer = torch.optim.Adam(self.policy.parameters(), lr=0.001)
+        def get_priority_action(self, state):
+            st = torch.tensor(state, dtype=torch.float32).to(self.device)
+            with torch.no_grad(): probs = self.policy(st)
+            action = torch.multinomial(probs, 1).item()
+            return action, probs[action].item()
+        def optimize_alert(self, alert, weather_risk=0.5):
+            state = np.array([alert.get('similarity_score',0.5), alert.get('distance_km',25)/50.0,
+                alert.get('severity',0.5), 0.0, weather_risk], dtype=np.float32)
+            action, conf = self.get_priority_action(state)
+            if action == 0: alert['priority'] = max(1, alert.get('priority',2)-1); alert['rl_recommendation'] = 'URGENT'
+            else: alert['rl_recommendation'] = 'Standard priority'
+            alert['rl_confidence'] = round(conf, 3)
+            return alert
+else:
+    class AlertPriorityRL:
+        def __init__(self, **kwargs): pass
+        def optimize_alert(self, alert, weather_risk=0.5):
+            alert['rl_recommendation'] = 'Standard priority (torch unavailable)'
+            return alert
 
 
 # =====================================
