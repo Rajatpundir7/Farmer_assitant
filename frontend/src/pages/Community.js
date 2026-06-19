@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Layout from '@/components/Layout';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,81 +8,70 @@ import { Badge } from '@/components/ui/badge';
 import { Users, Heart, MessageCircle, Share2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import apiService from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
+
+const SEED_POSTS = [
+  { post_id: 'seed-1', author: 'Ramesh Kumar', location: 'Punjab', time: '2 hours ago', content: 'Just harvested wheat this season. Got excellent yield of 48 quintals per hectare! Thanks to the weather advisory from this app.', likes: 45, liked_by: [], comments: 12 },
+  { post_id: 'seed-2', author: 'Suresh Patil', location: 'Maharashtra', time: '5 hours ago', content: 'Anyone facing pest issues in tomato crops? I noticed white flies on my plants. Need suggestions for organic treatment.', likes: 28, liked_by: [], comments: 18 },
+  { post_id: 'seed-3', author: 'Vijay Singh', location: 'Uttar Pradesh', time: '1 day ago', content: 'Market prices for rice are looking good this week. Sold my produce at ₹2,850 per quintal in Lucknow mandi.', likes: 67, liked_by: [], comments: 24 },
+  { post_id: 'seed-4', author: 'Lakshmi Devi', location: 'Tamil Nadu', time: '1 day ago', content: 'Started using drip irrigation system recommended by agricultural officer. Seeing 30% water savings already!', likes: 89, liked_by: [], comments: 31 },
+];
 
 const Community = () => {
   const [newPost, setNewPost] = useState('');
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      author: 'Ramesh Kumar',
-      location: 'Punjab',
-      time: '2 hours ago',
-      content: 'Just harvested wheat this season. Got excellent yield of 48 quintals per hectare! Thanks to the weather advisory from this app.',
-      likes: 45,
-      comments: 12,
-      liked: false,
-    },
-    {
-      id: 2,
-      author: 'Suresh Patil',
-      location: 'Maharashtra',
-      time: '5 hours ago',
-      content: 'Anyone facing pest issues in tomato crops? I noticed white flies on my plants. Need suggestions for organic treatment.',
-      likes: 28,
-      comments: 18,
-      liked: false,
-    },
-    {
-      id: 3,
-      author: 'Vijay Singh',
-      location: 'Uttar Pradesh',
-      time: '1 day ago',
-      content: 'Market prices for rice are looking good this week. Sold my produce at ₹2,850 per quintal in Lucknow mandi.',
-      likes: 67,
-      comments: 24,
-      liked: true,
-    },
-    {
-      id: 4,
-      author: 'Lakshmi Devi',
-      location: 'Tamil Nadu',
-      time: '1 day ago',
-      content: 'Started using drip irrigation system recommended by agricultural officer. Seeing 30% water savings already!',
-      likes: 89,
-      comments: 31,
-      liked: false,
-    },
-  ]);
+  const [posts, setPosts] = useState(SEED_POSTS);
+  const [posting, setPosting] = useState(false);
+  const { user } = useAuth();
+  const farmerId = user?.id || 'anonymous';
 
-  const handlePost = () => {
-    if (newPost.trim()) {
-      const post = {
-        id: Date.now(),
-        author: 'You',
-        location: 'Your Location',
-        time: 'Just now',
+  const fetchPosts = useCallback(async () => {
+    try {
+      const data = await apiService.getCommunityPosts();
+      if (data?.posts?.length) setPosts(data.posts);
+    } catch {
+      // keep seed posts on error
+    }
+  }, []);
+
+  useEffect(() => { fetchPosts(); }, [fetchPosts]);
+
+  const handlePost = async () => {
+    if (!newPost.trim()) return;
+    setPosting(true);
+    try {
+      const created = await apiService.createCommunityPost({
+        author: user?.name || 'Anonymous Farmer',
+        location: user?.location || 'India',
         content: newPost,
-        likes: 0,
-        comments: 0,
-        liked: false,
-      };
-      setPosts([post, ...posts]);
+        farmer_id: farmerId,
+      });
+      setPosts(prev => [created, ...prev]);
       setNewPost('');
       toast.success('Post shared with community!');
+    } catch {
+      toast.error('Failed to share post. Please try again.');
+    } finally {
+      setPosting(false);
     }
   };
 
-  const handleLike = (postId) => {
-    setPosts(posts.map(post => {
-      if (post.id === postId) {
-        return {
-          ...post,
-          liked: !post.liked,
-          likes: post.liked ? post.likes - 1 : post.likes + 1,
-        };
-      }
-      return post;
+  const handleLike = async (postId) => {
+    // Optimistic update
+    setPosts(prev => prev.map(p => {
+      if (p.post_id !== postId) return p;
+      const liked = p.liked_by?.includes(farmerId);
+      return {
+        ...p,
+        likes: liked ? p.likes - 1 : p.likes + 1,
+        liked_by: liked ? p.liked_by.filter(id => id !== farmerId) : [...(p.liked_by || []), farmerId],
+      };
     }));
+    try {
+      await apiService.toggleLikePost(postId, farmerId);
+    } catch {
+      fetchPosts(); // revert on error
+    }
   };
 
   return (
@@ -109,9 +98,9 @@ const Community = () => {
               onChange={(e) => setNewPost(e.target.value)}
             />
             <div className="flex justify-end">
-              <Button onClick={handlePost} className="gradient-primary" disabled={!newPost.trim()}>
+              <Button onClick={handlePost} className="gradient-primary" disabled={!newPost.trim() || posting}>
                 <Send className="mr-2 h-4 w-4" />
-                Share Post
+                {posting ? 'Sharing...' : 'Share Post'}
               </Button>
             </div>
           </CardContent>
@@ -121,7 +110,7 @@ const Community = () => {
         <div className="space-y-4">
           {posts.map((post, index) => (
             <motion.div
-              key={post.id}
+              key={post.post_id || post.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
@@ -154,10 +143,10 @@ const Community = () => {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleLike(post.id)}
-                      className={post.liked ? 'text-red-500' : 'text-muted-foreground'}
+                      onClick={() => handleLike(post.post_id || post.id)}
+                      className={post.liked_by?.includes(farmerId) ? 'text-red-500' : 'text-muted-foreground'}
                     >
-                      <Heart className={`mr-2 h-4 w-4 ${post.liked ? 'fill-current' : ''}`} />
+                      <Heart className={`mr-2 h-4 w-4 ${post.liked_by?.includes(farmerId) ? 'fill-current' : ''}`} />
                       {post.likes}
                     </Button>
                     <Button variant="ghost" size="sm" className="text-muted-foreground">

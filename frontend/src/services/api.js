@@ -77,6 +77,20 @@ class ApiService {
     });
   }
 
+  async sendOtp(email) {
+    return this.request('/auth/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async verifyOtp(email, otp) {
+    return this.request('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+  }
+
   async getUsers() {
     return this.request('/users');
   }
@@ -437,7 +451,29 @@ class ApiService {
     }
     
     return response.json();
-  }}
+  }
+
+  // =====================================
+  // COMMUNITY APIs
+  // =====================================
+
+  async getCommunityPosts(limit = 50) {
+    return this.request(`/community/posts?limit=${limit}`);
+  }
+
+  async createCommunityPost(postData) {
+    return this.request('/community/posts', {
+      method: 'POST',
+      body: JSON.stringify(postData),
+    });
+  }
+
+  async toggleLikePost(postId, farmerId = 'anonymous') {
+    return this.request(`/community/posts/${postId}/like?farmer_id=${encodeURIComponent(farmerId)}`, {
+      method: 'POST',
+    });
+  }
+}
 
 // Export a singleton instance
 const apiService = new ApiService();

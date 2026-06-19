@@ -21,6 +21,13 @@ import certifi
 import httpx
 import shutil
 
+# Configure logging FIRST (before any module uses logger)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Add backend directory to path for local imports
 ROOT_DIR = Path(__file__).parent
 sys.path.insert(0, str(ROOT_DIR))
@@ -33,6 +40,7 @@ from alert_service import (
     get_alert_service, get_location_service, get_notification_service,
     FarmerLocationUpdate, FarmerRegistration, DiseaseReport, NotificationPreferences
 )
+from email_otp_service import get_otp_service
 
 load_dotenv(ROOT_DIR / '.env')
 
@@ -47,14 +55,20 @@ WEATHER_API_KEY = os.environ.get('WEATHER_API_KEY', '')
 MARKET_API_KEY = os.environ.get('MARKET_API_KEY', '')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-# MongoDB connection with TLS certificate for Atlas
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(
-    mongo_url,
-    tls=True,
-    tlsCAFile=certifi.where()
-)
-db = client[os.environ['DB_NAME']]
+# MongoDB connection — safe init, never crash on startup
+mongo_url = os.environ.get('MONGO_URL', 'mongodb://localhost:27017')
+try:
+    if 'mongodb+srv' in mongo_url or 'mongodb.net' in mongo_url:
+        client = AsyncIOMotorClient(mongo_url, tls=True, tlsCAFile=certifi.where(), serverSelectionTimeoutMS=5000)
+        logger.info("✅ MongoDB Atlas connection (TLS enabled)")
+    else:
+        client = AsyncIOMotorClient(mongo_url, serverSelectionTimeoutMS=5000)
+        logger.info("✅ MongoDB local connection")
+except Exception as e:
+    logger.error(f"❌ MongoDB connection failed: {e}")
+    client = AsyncIOMotorClient('mongodb://localhost:27017', serverSelectionTimeoutMS=5000)
+
+db = client[os.environ.get('DB_NAME', 'kisanji_db')]
 
 # Create the main app without a prefix
 app = FastAPI(title="Kisan.JI API", description="Smart Agriculture Platform API")
@@ -88,6 +102,13 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     phone: str
     password: Optional[str] = None
+
+class OTPSendRequest(BaseModel):
+    email: str
+
+class OTPVerifyRequest(BaseModel):
+    email: str
+    otp: str
 
 class UserResponse(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -245,6 +266,93 @@ async def login_user(login_data: UserLogin):
         "voice_enabled": user.get("voice_enabled", True),
         "message": "Login successful"
     }
+
+
+# =====================================
+# EMAIL OTP AUTH ROUTES
+# =====================================
+
+@api_router.post("/auth/send-otp")
+async def send_otp(request: OTPSendRequest):
+    """
+    Send OTP code to the provided email address
+    """
+    try:
+        otp_service = get_otp_service()
+        result = otp_service.send_otp(request.email)
+        
+        if result["success"]:
+            return {
+                "success": True,
+                "message": result["message"],
+                "expires_in": result.get("expires_in", 300)
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["message"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"OTP send error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send OTP")
+
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(request: OTPVerifyRequest):
+    """
+    Verify OTP and login/register the user
+    """
+    try:
+        otp_service = get_otp_service()
+        result = otp_service.verify_otp(request.email, request.otp)
+        
+        if result["success"]:
+            # Check if user exists with this email
+            user = await db.users.find_one({"email": request.email})
+            
+            if not user:
+                # Auto-register with email
+                new_user = {
+                    "name": request.email.split("@")[0].title(),
+                    "email": request.email,
+                    "phone": "",
+                    "role": "farmer",
+                    "preferred_language": "en",
+                    "voice_enabled": True,
+                    "created_at": datetime.now(timezone.utc),
+                    "auth_method": "email_otp"
+                }
+                insert_result = await db.users.insert_one(new_user)
+                
+                return {
+                    "success": True,
+                    "id": str(insert_result.inserted_id),
+                    "name": new_user["name"],
+                    "email": request.email,
+                    "role": "farmer",
+                    "preferred_language": "en",
+                    "voice_enabled": True,
+                    "message": "OTP verified. Account created successfully!",
+                    "is_new_user": True
+                }
+            else:
+                return {
+                    "success": True,
+                    "id": str(user["_id"]),
+                    "name": user.get("name", "Farmer"),
+                    "email": request.email,
+                    "role": user.get("role", "farmer"),
+                    "preferred_language": user.get("preferred_language", "en"),
+                    "voice_enabled": user.get("voice_enabled", True),
+                    "message": "OTP verified. Login successful!",
+                    "is_new_user": False
+                }
+        else:
+            raise HTTPException(status_code=400, detail=result["message"])
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"OTP verify error: {e}")
+        raise HTTPException(status_code=500, detail="OTP verification failed")
 
 @api_router.get("/users")
 async def get_users():
@@ -1249,9 +1357,10 @@ async def get_disease_info(disease_name: str):
                 "preventions": info.get("preventions", [])
             }
     
-    # Fallback to database
+    # Fallback to database — query GAN table for disease collections
     try:
-        for mapping in CROP_DISEASE_MAPPING:
+        gan_mappings = await db.gan.find({}, {"_id": 0}).to_list(100)
+        for mapping in gan_mappings:
             collection = mapping.get("disease_collection")
             if collection:
                 disease = await db[collection].find_one(
@@ -2101,6 +2210,58 @@ async def get_nearby_farmers(
 # Import timedelta for price history
 from datetime import timedelta
 
+
+# =====================================
+# COMMUNITY ROUTES
+# =====================================
+
+class CommunityPost(BaseModel):
+    author: str
+    location: str
+    content: str
+    farmer_id: Optional[str] = None
+
+
+@api_router.get("/community/posts")
+async def get_community_posts(limit: int = 50):
+    posts = await db.community_posts.find({}, {"_id": 0}).sort("created_at", -1).limit(limit).to_list(limit)
+    return {"posts": posts}
+
+
+@api_router.post("/community/posts")
+async def create_community_post(post: CommunityPost):
+    doc = {
+        "post_id": str(uuid.uuid4()),
+        **post.model_dump(),
+        "likes": 0,
+        "liked_by": [],
+        "comments": 0,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "time": "Just now",
+    }
+    await db.community_posts.insert_one(doc)
+    return doc
+
+
+@api_router.post("/community/posts/{post_id}/like")
+async def toggle_like_post(post_id: str, farmer_id: str = "anonymous"):
+    post = await db.community_posts.find_one({"post_id": post_id})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    liked_by = post.get("liked_by", [])
+    if farmer_id in liked_by:
+        liked_by.remove(farmer_id)
+    else:
+        liked_by.append(farmer_id)
+
+    await db.community_posts.update_one(
+        {"post_id": post_id},
+        {"$set": {"liked_by": liked_by, "likes": len(liked_by)}}
+    )
+    return {"post_id": post_id, "likes": len(liked_by), "liked": farmer_id in liked_by}
+
+
 # Include the router in the main app
 app.include_router(api_router)
 
@@ -2113,13 +2274,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Logging already configured at top of file
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+if __name__ == "__main__":
+    import uvicorn
+    logger.info("Starting server directly via python server.py")
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
